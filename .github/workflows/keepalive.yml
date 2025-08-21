@@ -2,8 +2,8 @@ name: Keep HuggingFace Space Alive
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # 每 10 分钟运行一次
-  workflow_dispatch:          # 可以手动触发
+    - cron: '*/10 * * * *'   # 每10分钟运行一次
+  workflow_dispatch:
 
 jobs:
   keepalive:
@@ -11,6 +11,6 @@ jobs:
     steps:
       - name: Keep Space Alive
         run: |
-          URL="https://qwe8899/ccfy.hf.space"
-          echo "Pinging $URL ..."
-          curl -s -o /dev/null -w "%{http_code}\n" "$URL"
+          URL="https://qwe8899-xdfc.hf.space"
+          echo "Pinging $URL"
+          curl -s -o /dev/null -w "%{http_code}" $URL
