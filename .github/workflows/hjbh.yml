@@ -38,4 +38,4 @@ jobs:
           echo "::error::All attempts failed. Last HTTP status: $status"
           exit 1
         env:
-          HF_TOKEN: ${{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}}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # 正确引用Secret
