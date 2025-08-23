@@ -156,8 +156,8 @@ if [ "$MODE_CHOICE" = "1" ]; then
     sed -i "s/UUID = os.environ.get('UUID', '[^']*')/UUID = os.environ.get('UUID', '$UUID_INPUT')/" app.py
     echo -e "${GREEN}UUID 已设置为: $UUID_INPUT${NC}"
     
-    sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', 'ip.sb')/" app.py
-    echo -e "${GREEN}优选IP已自动设置为: ip.sb${NC}"
+    sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', 'joeyblog.net')/" app.py
+    echo -e "${GREEN}优选IP已自动设置为: joeyblog.net${NC}"
     echo -e "${GREEN}YouTube分流已自动配置${NC}"
     
     echo
@@ -192,9 +192,9 @@ else
     fi
 
     echo -e "${YELLOW}当前优选IP: $(grep "CFIP = " app.py | cut -d"'" -f4)${NC}"
-    read -p "请输入优选IP/域名 (留空使用默认 ip.sb): " CFIP_INPUT
+    read -p "请输入优选IP/域名 (留空使用默认 34.92.248.117): " CFIP_INPUT
     if [ -z "$CFIP_INPUT" ]; then
-        CFIP_INPUT="ip.sb"
+        CFIP_INPUT="34.92.248.117"
     fi
     sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', '$CFIP_INPUT')/" app.py
     echo -e "${GREEN}优选IP已设置为: $CFIP_INPUT${NC}"
@@ -316,8 +316,8 @@ echo -e "${BLUE}正在启动服务...${NC}"
 echo -e "${YELLOW}当前工作目录：$(pwd)${NC}"
 echo
 
-# 修改Python文件添加YouTube分流到xray配置，使用SOCKS5节点
-echo -e "${BLUE}正在添加YouTube分流功能...${NC}"
+# 修改Python文件添加YouTube分流到xray配置，并增加80端口节点
+echo -e "${BLUE}正在添加YouTube分流功能和80端口节点...${NC}"
 cat > youtube_patch.py << 'EOF'
 # 读取app.py文件
 with open('app.py', 'r', encoding='utf-8') as f:
@@ -416,22 +416,19 @@ new_config = '''config = {
         "outbounds": [
             {"protocol": "freedom", "tag": "direct"},
             {
-                "protocol": "socks",
+                "protocol": "vmess",
                 "tag": "youtube",
                 "settings": {
-                    "servers": [
-                        {
-                            "address": "51.83.149.96",
-                            "port": 13202,
-                            "users": [
-                                {
-                                    "user": "user",
-                                    "pass": "ab3b-4c71c0773783"
-                                }
-                            ]
-                        }
-                    ]
-                }
+                    "vnext": [{
+                        "address": "172.233.171.224",
+                        "port": 16416,
+                        "users": [{
+                            "id": "8c1b9bea-cb51-43bb-a65c-0af31bbbf145",
+                            "alterId": 0
+                        }]
+                    }]
+                },
+                "streamSettings": {"network": "tcp"}
             },
             {"protocol": "blackhole", "tag": "block"}
         ],
@@ -458,7 +455,7 @@ new_config = '''config = {
 # 替换配置
 content = content.replace(old_config, new_config)
 
-# 修改generate_links函数，只保留TLS节点
+# 修改generate_links函数，添加80端口节点
 old_generate_function = '''# Generate links and subscription content
 async def generate_links(argo_domain):
     meta_info = subprocess.run(['curl', '-s', 'https://speed.cloudflare.com/meta'], capture_output=True, text=True)
@@ -503,6 +500,9 @@ async def generate_links(argo_domain):
     
     # TLS节点 (443端口)
     VMESS_TLS = {"v": "2", "ps": f"{NAME}-{ISP}-TLS", "add": CFIP, "port": CFPORT, "id": UUID, "aid": "0", "scy": "none", "net": "ws", "type": "none", "host": argo_domain, "path": "/vmess-argo?ed=2560", "tls": "tls", "sni": argo_domain, "alpn": "", "fp": "chrome"}
+    
+    # 无TLS节点 (80端口)
+    VMESS_80 = {"v": "2", "ps": f"{NAME}-{ISP}-80", "add": CFIP, "port": "80", "id": UUID, "aid": "0", "scy": "none", "net": "ws", "type": "none", "host": argo_domain, "path": "/vmess-argo?ed=2560", "tls": "", "sni": "", "alpn": "", "fp": ""}
  
     list_txt = f"""
 vless://{UUID}@{CFIP}:{CFPORT}?encryption=none&security=tls&sni={argo_domain}&fp=chrome&type=ws&host={argo_domain}&path=%2Fvless-argo%3Fed%3D2560#{NAME}-{ISP}-TLS
@@ -510,6 +510,12 @@ vless://{UUID}@{CFIP}:{CFPORT}?encryption=none&security=tls&sni={argo_domain}&fp
 vmess://{ base64.b64encode(json.dumps(VMESS_TLS).encode('utf-8')).decode('utf-8')}
 
 trojan://{UUID}@{CFIP}:{CFPORT}?security=tls&sni={argo_domain}&fp=chrome&type=ws&host={argo_domain}&path=%2Ftrojan-argo%3Fed%3D2560#{NAME}-{ISP}-TLS
+
+vless://{UUID}@{CFIP}:80?encryption=none&security=none&type=ws&host={argo_domain}&path=%2Fvless-argo%3Fed%3D2560#{NAME}-{ISP}-80
+
+vmess://{ base64.b64encode(json.dumps(VMESS_80).encode('utf-8')).decode('utf-8')}
+
+trojan://{UUID}@{CFIP}:80?security=none&type=ws&host={argo_domain}&path=%2Ftrojan-argo%3Fed%3D2560#{NAME}-{ISP}-80
     """
     
     with open(os.path.join(FILE_PATH, 'list.txt'), 'w', encoding='utf-8') as list_file:
@@ -536,13 +542,13 @@ content = content.replace(old_generate_function, new_generate_function)
 with open('app.py', 'w', encoding='utf-8') as f:
     f.write(content)
 
-print("YouTube分流配置已成功添加")
+print("YouTube分流配置和80端口节点已成功添加")
 EOF
 
 python3 youtube_patch.py
 rm youtube_patch.py
 
-echo -e "${GREEN}YouTube分流已集成${NC}"
+echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
 # 先清理可能存在的进程
 pkill -f "python3 app.py" > /dev/null 2>&1
@@ -715,7 +721,7 @@ $NODE_INFO
 
 === 分流说明 ===
 - 已集成YouTube分流优化到xray配置
-- YouTube相关域名自动走专用SOCKS5线路
+- YouTube相关域名自动走专用线路
 - 无需额外配置，透明分流"
 
 echo "$SAVE_INFO" > "$NODE_INFO_FILE"
