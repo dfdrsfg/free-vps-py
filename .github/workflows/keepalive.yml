@@ -11,6 +11,6 @@ jobs:
     steps:
       - name: Keep Space Alive
         run: |
-          URL="https://qwe8899-c.hf.space"
+          URL="https://qwe8899-x.hf.space"
           echo "Pinging $URL"
           curl -s -o /dev/null -w "%{http_code}" $URL
