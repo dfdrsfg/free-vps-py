@@ -9,7 +9,7 @@ jobs:
   keepalive:
     runs-on: ubuntu-latest
     env:
-      URL: "https://qwe8899-c.hf.space/"
+      URL: "https://qwe8899-x.hf.space/"
       MAX_ATTEMPTS: 3
       BASE_SLEEP: 5
     steps:
@@ -38,4 +38,4 @@ jobs:
           echo "::error::All attempts failed. Last HTTP status: $status"
           exit 1
         env:
-          HF_TOKEN: ${{ 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 }}  # 正确引用Secret
+          HF_TOKEN: ${{ aGZfUmNnV2tlaERpcWRMTHFjb3ptdlNaa2FjRG9lZnFkSk5jcw== }}  # 正确引用Secret
