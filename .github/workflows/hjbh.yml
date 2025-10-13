@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       URL: "https://qwe8899-ggh.hf.space/"
+      URL: "https://qwe8899-ff.hf.space/"
       MAX_ATTEMPTS: 3
       BASE_SLEEP: 5
     steps:
