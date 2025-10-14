@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # 将 URL 合并为列表（以空格分隔）
-      SPACE_URLS: "https://qwe8899-ggh.hf.space https://qwe8899-ff.hf.space"
+      SPACE_URLS: "https://qwe8899-ggg.hf.space https://qwe8899-ff.hf.space"
       MAX_ATTEMPTS: 3    # 每个 URL 的最大重试次数
       BASE_SLEEP: 5      # 基础等待时间（秒）
 
