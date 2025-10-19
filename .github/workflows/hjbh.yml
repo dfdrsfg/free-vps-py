@@ -1,52 +1,41 @@
-name: Keep Hugging Face Spaces Awake (Multi-URL)
+name: Keep Hugging Face Space Awake (bash)
 
 on:
   schedule:
-    - cron: "0 * * * *"  # 每小时触发一次
-  workflow_dispatch:     # 允许手动触发
+    - cron: "0 * * * *"  # 每小时执行一次
+  workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     env:
-      # 将 URL 合并为列表（以空格分隔）
-      SPACE_URLS: "https://qwe8899-ggg.hf.space https://qwe8899-ff.hf.space"
-      MAX_ATTEMPTS: 3    # 每个 URL 的最大重试次数
-      BASE_SLEEP: 5      # 基础等待时间（秒）
-
+      URL: "https://qwe8899-ggh.hf.space/ https://qwe8899-ff.hf.space/"
+      MAX_ATTEMPTS: 3
+      BASE_SLEEP: 5
     steps:
-      - name: Ping All Spaces
+      - name: Ping Space with retries
         run: |
           set -euo pipefail
 
-          # 遍历所有 URL
-          for URL in $SPACE_URLS; do
-            echo "⬆️ Pinging $URL"
-            attempt=1
-
-            # 重试逻辑
-            while [ $attempt -le $MAX_ATTEMPTS ]; do
-              status=$(curl -sSL -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $HF_TOKEN" "$URL" || echo "000")
-              echo "  Attempt $attempt → HTTP $status"
-              
-              if [ "$status" = "200" ] || [ "$status" = "302" ]; then
-                echo "✅ Success: $URL is alive (HTTP $status)"
-                break
-              fi
-
-              if [ $attempt -lt $MAX_ATTEMPTS ]; then
-                sleep_seconds=$(( BASE_SLEEP * attempt ))
-                echo "    ⏳ Retry in $sleep_seconds seconds..."
-                sleep $sleep_seconds
-              fi
-              attempt=$((attempt + 1))
-            done
-
-            # 全部重试失败处理
-            if [ "$status" != "200" ] && [ "$status" != "302" ]; then
-              echo "::error::Failed to ping $URL after $MAX_ATTEMPTS attempts (HTTP $status)"
-              exit 1
+          echo "Ping $URL"
+          attempt=1
+          while [ $attempt -le $MAX_ATTEMPTS ]; do
+            status=$(curl -sSL -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $HF_TOKEN" "$URL" || echo "000")
+            echo "Attempt $attempt -> HTTP $status"
+            if [ "$status" = "200" ] || [ "$status" = "302" ]; then
+              echo "✅ Space reachable (HTTP $status)."
+              exit 0
             fi
+
+            if [ $attempt -lt $MAX_ATTEMPTS ]; then
+              sleep_seconds=$(( BASE_SLEEP * attempt ))
+              echo "Waiting $sleep_seconds seconds before retry..."
+              sleep $sleep_seconds
+            fi
+            attempt=$((attempt + 1))
           done
+
+          echo "::error::All attempts failed. Last HTTP status: $status"
+          exit 1
         env:
-          HF_TOKEN: ${{ secrets.HF_API_TOKEN }}  # 需在仓库 Secrets 中配置
+          HF_TOKEN: ${{ secrets.YOUR_SECRET_NAME }}  # 正确引用Secret
