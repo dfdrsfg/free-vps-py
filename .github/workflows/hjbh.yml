@@ -9,7 +9,7 @@ jobs:
   keepalive:
     runs-on: ubuntu-latest
     env:
-      URL: "https://qwe8899-fff.hf.space"
+      URL: "https://qwe8899-fd.hf.space"
       MAX_ATTEMPTS: 3
       BASE_SLEEP: 5
     steps:
